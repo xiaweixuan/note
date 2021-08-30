@@ -1,1 +1,4 @@
-<JumpToNote />
+
+<ClientOnly>
+  <JumpToNote />
+</ClientOnly>
