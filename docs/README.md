@@ -1,4 +1,3 @@
-
 <ClientOnly>
   <JumpToNote />
 </ClientOnly>
