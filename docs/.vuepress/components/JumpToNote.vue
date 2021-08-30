@@ -1,9 +1,8 @@
 <template>
-  <div></div>
+  <p></p>
 </template>
 <script>
 export default {
-  name: "JumpToNote",
   mounted() {
     console.log(1)
   },
