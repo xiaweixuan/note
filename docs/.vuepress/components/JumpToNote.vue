@@ -1,5 +1,5 @@
 <template>
-  <p></p>
+  <p>loading</p>
 </template>
 <script>
 export default {
