@@ -5,9 +5,7 @@
 export default {
   name: "JumpToNote",
   mounted() {
-    this.$router.push({
-      path: `/note/`,
-    });
+    console.log(1)
   },
 };
 </script>
