@@ -5,9 +5,9 @@
 export default {
   name: "JumpToNote",
   mounted() {
-    // window.onload = function () {
-    window.location.href = `${window.location.href}note/`;
-    // };
+    this.$router.push({
+      path: `/note/`,
+    });
   },
 };
 </script>
