@@ -1,5 +1,3 @@
 <script>
-    window && window.onload = function () {
-      window.location.href = `${window.location.href}note/`;
-    };
+    console.log(1)
 </script>
