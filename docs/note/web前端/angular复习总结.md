@@ -126,7 +126,7 @@ ng add ng-zorro-antd ##ui库
 
 #### 条件渲染
 
-*ngFor：循环渲染
+`*ngFor`：循环渲染
 
 ```html
 <ul>
@@ -143,7 +143,7 @@ ng add ng-zorro-antd ##ui库
 </ul>
 ```
 
-*ngIf：判断渲染
+`*ngIf`：判断渲染
 
 ```html
 <div *ngIf="条件">
@@ -210,9 +210,7 @@ ng add ng-zorro-antd ##ui库
   }
   ```
 
-eg：
-
-* 在组件中有一个伪类`:host`,他的属性定义会应用到他的宿主（也就是他所在的组件本身），而不是模板中的元素。
+> eg：在组件中有一个伪类`:host`,他的属性定义会应用到他的宿主（也就是他所在的组件本身），而不是模板中的元素。
 
 #### 依赖注入
 
@@ -311,12 +309,6 @@ this.injector.get(token)
 //此后如果我想用这个字符串，可以这样声明：
 //@Inject(token) private baseurl:string
 ```
-
-
-
-
-
-
 
 
 
@@ -685,69 +677,66 @@ export class HomeRoutingModule {}
 
 ##### 路径参数
 
+```
 拼接在url上面的，叫做路径参数
-
-*配置*
-
+配置
 {path:':tabLink',component:component}
-
-*激活*
-
+激活
 <a [routerLink]="['/home','/spots']"></a>
-
 this.router.navigate(['home','/spots'])
-
-*url*
-
+url
 http://loaclhost:4200/home/sports
-
-*取读*
-
+取读
 this.route.paramsMap.subcribe(params=>{})
+```
 
 ##### 路径对象参数
 
+```
 形似`name=val1`的参数
 
-*配置*
+配置
 
 {path:':tabLink',component:component}
 
-*激活*
+激活
 
 <a [routerLink]="['/home','/spots'，{name:'val1'}]"></a>
 
 this.router.navigate(['home','/spots',{name:'val1'}])
 
-*url*
+url
 
 http://loaclhost:4200/home/sports;name=val1
 
-*取读*
+取读
 
 this.route.paramsMap.subcribe(params=>{})
+```
 
 ##### 路径查询参数
 
+```
 形似`?name=val1`的参数
 
-*配置*
+配置
 
 {path:':tabLink',component:component}
 
-*激活*
+激活
 
 <a [routerLink]="['/home']" [queryParms]={name:'val1'}></a>
 
 this.router.navigate(['home'],{queryParms:{name:'val1'}})
 
-*url*
+url
 
 http://loaclhost:4200/home/sports;name=val1
 
-*取读*
+取读
 
 this.route.queryParamsMap.subcribe(params=>{})
+```
 
 ##### 点击触发样式
 
@@ -958,7 +947,7 @@ ngOnInit(){
 }
 ```
 
-使用在模板中时，由于这是一部操作，所以在一开始的时候paramData和‘home’的数据类型不同，所以我们通过异步管道实现它。
+使用在模板中时，由于这是一部操作，所以在一开始的时候paramData和home的数据类型不同，所以我们通过异步管道实现它。
 
 ```html
 <div *ngIf="(paramData | async)==='home'">
@@ -967,3 +956,4 @@ ngOnInit(){
     </p>
 </div>
 ```
+
