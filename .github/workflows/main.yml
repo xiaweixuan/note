@@ -28,7 +28,7 @@ jobs:
 
       # 生成CNAME
       - name: create CNAME
-        run: touch CNAME && echo "note.xiawx.top" > CNAME
+        run: touch dist/CNAME && echo "note.xiawx.top" > dist/CNAME
 
       # 查看 workflow 的文档来获取更多信息
       # @see https://github.com/crazy-max/ghaction-github-pages
