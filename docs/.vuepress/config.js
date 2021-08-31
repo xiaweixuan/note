@@ -22,6 +22,7 @@ const articleConfig = {
     '小程序开发如何使用colorUI框架'
   ],
   'web前端': [
+    'vite',
     'angular复习总结',
     'react复习总结',
     'vue复习总结',

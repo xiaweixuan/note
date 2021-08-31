@@ -1,3 +1,5 @@
+[vite](/web前端/vite.md)
+
 [angular复习总结](/web前端/angular复习总结.md)
 
 [react复习总结](/web前端/react复习总结.md)
