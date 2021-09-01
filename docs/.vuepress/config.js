@@ -53,7 +53,7 @@ module.exports = {
   dest: `dist/`,
 
   head: [
-    ['link', { rel: 'icon', href: '/images/logo.svg' }],
+    ['link', { rel: 'icon', href: '/images/logo.ico' }],
     ['meta', { name: 'theme-color', content: '#3eaf7c' }],
     ['meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }],
     ['meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }],
@@ -61,7 +61,7 @@ module.exports = {
   ],
   themeConfig: {
     home: true,
-    logo: '/images/logo.svg',
+    logo: '/images/logo.ico',
     smoothScroll: true,
     nextLinks: false,
     prevLinks: false,
