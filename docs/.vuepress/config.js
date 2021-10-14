@@ -26,7 +26,7 @@ module.exports = {
       { text: '学习笔记', link: '/note/' },
     ],
     sidebar: {
-      '/note/': generateNoteSidebar(), 
+      '/note/': generateNoteSidebar(),
       // '/note/': [
       //   {
       //     "title": "Applet",
