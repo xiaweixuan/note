@@ -1247,6 +1247,155 @@ cluster模块其实是child_process和net模块的组合应用。cluster启动�
 
 在cluster内部隐式创建tcp服务器的方式对于使用者十分透明，但也使得他不如直接用child_process那样灵活。
 
+## 第三方包
+
+##### nodemon 热更新
+
+安装开发依赖
+
+```shell
+yarn add nodemon -D # 加-D是指在开发环境中安装。
+```
+
+配置开发命令
+
+```json
+"scripts":{
+    "start":"nodemon bin/www"
+}
+```
+
+> 如果nodemon后面没有参数，那么他将自动读取package中的main文件。
+>
+> ```json
+> {
+> "main": "bin/www",
+> "scripts": {
+>  "start": "nodemon",
+> },
+> }
+> ```
+
+配置监听文件`nodemon.json`
+
+```json
+{
+  "watch": [ // 监听的目录
+    "./src/**/*.*"
+  ],
+  "restartable": "rs",
+  "ignore": [
+    ".git",
+    "node_modules/**/node_modules"
+  ],
+  "verbose": true, // 输出信息
+  "execMap": { // "js": "node --harmony" 表示用 nodemon 代替 node  --harmony 运行 js 后缀文件；
+    "": "node",
+    "js": "node --harmony"
+  },
+  "events": { // 触发事件后执行
+    "restart": "node test.js"
+  }, 
+  "env": {
+    "NODE_ENV": "development",
+    "PORT": "3000"
+  },
+  "ext": "js json" // 监控文件类型
+}
+```
+
+时间包括
+
+events：这个字段表示 nodemon 运行到某些状态时的一些触发事件，总共有五个状态：
+
+- start - 子进程（即监控的应用）启动
+- crash - 子进程崩溃，不会触发 exit
+- exit - 子进程完全退出，不是非正常的崩溃
+- restart - 子进程重启
+- config:update - nodemon 的 config 文件改变
+
+
+
+> 该`node --harmony`标志允许您使用标记为**staged 的**ECMAScript 6 (ES6) 功能。
+>
+> 暂存功能是尚未被视为稳定的已完成功能，并且在达到**发货**状态时可能会发生重大更改。
+>
+> 您可以从[NodeJS 文档页面 中](https://nodejs.org/en/docs/es6/)找到更多信息。
+>
+> 今天，最新的 NodeJS 版本已经支持 ES6 特性，所以不再需要这个`--harmony`标志。
+>
+> 如果您发现您的应用程序在没有`--harmony`标志的情况下无法运行，您可能需要将您的 NodeJS 版本更新到最新的稳定版本。
+
+
+
+##### koa-body
+
+之前使用 koa2 的时候，处理 post 请求使用的是 `koa-bodyparser`，同时如果是图片上传使用的是 `koa-multer`。
+
+这两者的组合没什么问题，不过 `koa-multer` 和 `koa-route`（注意不是 `koa-router`） 存在不兼容的问题。
+
+这个问题已经在这篇文章中说明了：
+
+- [使用koa-multer实现文件上传并自定义文件名和目录](http://www.ptbird.cn/koa-multer-file-upload.html)
+
+关于 `koa-bodyparser` 的使用，见下面文章：
+
+- [手动实现koa2 body-parser中间件及koa-boayparser的使用](http://www.ptbird.cn/koa2-body-parser-by-self.html)
+
+但是这两者可以通过 `koa-body` 代替，并且只是用 `koa-body` 即可。
+
+
+
+##### Magic-string
+
+是一个操作字符串和生成source-map的工具
+
+```javascript
+var MagicString = require('magic-string');
+var magicString = new MagicString('export var name = "beijing"');
+//类似于截取字符串
+console.log(magicString.snip(0,6).toString()); // export
+//从开始到结束删除字符串(索引永远是基于原始的字符串，而非改变后的)
+console.log(magicString.remove(0,7).toString()); // var name = "beijing"
+
+//很多模块，把它们打包在一个文件里，需要把很多文件的源代码合并在一起
+let bundleString = new MagicString.Bundle();
+bundleString.addSource({
+    content:'var a = 1;',
+    separator:'\n'
+});
+bundleString.addSource({
+    content:'var b = 2;',
+    separator:'\n'
+});
+/* let str = '';
+str += 'var a = 1;\n'
+str += 'var b = 2;\n'
+console.log(str); */
+console.log(bundleString.toString());
+// var a = 1;
+// var b = 2;
+```
+
+##### invariant
+
+**当 `invariant` 判别条件为 `false` 时，会将 invariant 的信息作为错误抛出**
+
+```javascript
+var invariant = require('invariant');
+
+invariant(
+  2 + 2 === 4,
+  'You shall not pass!'
+);
+```
+
+
+
+
+
+
+
 
 
 

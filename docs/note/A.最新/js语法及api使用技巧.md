@@ -1,3 +1,15 @@
+
+
+## 数组
+
+```javascript
+arr.flat(depth) // new 将指定深度的元素与最外层元素合并
+```
+
+
+
+
+
 ## 基础
 
 #### bigint
@@ -21,6 +33,31 @@ typeof 9999999999999999n
 globalThis === window // true
 ```
 
+#### 位运算符
+
+位逻辑运算符工作流程如下:
+
+- 操作数被转换为32bit整數，以位序列（0和1组成）表示.若超過32bits，則取低位32bit
+- 第一个操作数的每一位都与第二个操作数的对应位组对: 第一位对应第一位,第二位对应第二位,以此类推.
+- 运算符被应用到每一对"位"上, 最终的运算结果由每一对“位”的运算结果组合起来.
+
+```javascript
+15 & 9   // 9    1111 & 1001 = 1001
+15 | 9   // 15   1111 | 1001 = 1111
+15 ^ 9   // 6    1111 ^ 1001 = 0110
+~15      // -16  ~00000...00000001111 = 11111...11111110000
+9 << 2   // 36   1001 << 2 = 100100
+9 >> 2   // 2    1001 >> 2 = 0010  [用符号位填充]
+19 >>> 2 // 4    10011 >>> 2 = 100 [用0填充]
+
+// 使用
+y >> x // 相当于除以2的x次方
+x >> 0 // Math.floor()
+~~2.2  // 取整 2
+```
+
+
+
 ## 书写技巧
 
 
@@ -43,7 +80,22 @@ parseInt('  10', 2)
 // 2
 ```
 
+#### ?? 空值合并
+
+当发现null和undefined的时候使用后面的值
+
+```javascript
+const foo = null ?? 'default string';
+console.log(foo);
+// expected output: "default string"
+
+const baz = 0 ?? 42;
+console.log(baz);
+// expected output: 0
+```
+
 #### 函数域的改变
+
 在很多源码中出现，
 
 ```javascript
@@ -61,7 +113,36 @@ foo.sayName();       // My name is Peter
 (0, foo.sayName)();  // My name is Shiny
 ```
 
+#### 语句前的分号;
+
+由于js引擎会自动在语句末添加`;`,导致一些问题的出现
+
+```javascript
+var globalCounter = { }
+
+(function () {
+    var n = 0
+    globalCounter.increment = function () {
+        return ++n
+    }
+})()
+```
+
+这样在第一句末尾则不会添加分毫，从而将`{}`作为函数来执行。所以在`'semi': [2, 'never']`规则下，通常这样写
+
+```javascript
+var globalCounter = { }
+
+;(function () {
+    var n = 0
+    globalCounter.increment = function () {
+        return ++n
+    }
+})()
+```
+
 #### 任务队列
+
 ```javascript
 // requestIdleCallback 来实现任务队列    
 function workLoop(deadline) {
@@ -93,5 +174,4 @@ const flush = () => {
 
 flush()
 ```
-
 

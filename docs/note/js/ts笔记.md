@@ -1,3 +1,83 @@
+## 推导基础
+
+#### infer
+
+infer在extends中使用，表示待推断的类型变量
+
+```typescript
+// 例如当我不知道传入变量的某一部分，可以用infer去创建这么一个临时介质，下面是一个生成传入函数返回类型的一个体操
+type ReturnType<T extends (v: any) => any> = T extends (v: any) => infer R ? R : any;
+```
+
+因为extends的前后应相互对应，所以，可以通过infer来取出前者类型的某一部分
+
+```typescript
+type Last<T extends any[]> = T extends [...infer First, infer Res] ? Res : never
+type a = last<['a', 'b', 'c']> // 'c'
+// 这样我们就取出了传入类型的某一部分
+```
+
+上面的体操中，因为我们限制了入参一定为数组，那么后面的三元表达式中，我们再次判断T是否属于数组，那么他应该永远为真，故永远返回三元的第一个结果，所以此三元式相当于取出（输出）了infer所定义的变量，及入参的某一部分
+
+如果我们不止想取出入参的某一部分，而是使用它，其实可以直接在三元的第一个返回中去处理，因为他是必定返回的结果
+
+```typescript
+type Last<T extends any[]> = T extends [...infer First, infer Res] ? [Res, 2,3] : never
+type a = last<['a', 'b', 'c']> // ['c', 2, 3]
+```
+
+#### keyof
+
+in
+
+
+
+never
+
+
+
+unknown
+
+
+
+...
+
+```typescript
+// ts也拥有数组结构的方法
+type A = [1,2,3] // 注意A是类型，不是数组变量
+type B = [...A] // type [1,2,3]
+
+```
+
+
+
+写类型的方式  Interface, Type 或 Class 
+
+
+
+模版字符串
+
+```typescript
+type Concat<S1 extends string, S2 extends string> = `${S1}${S2}`;
+type T2 = Concat<'Hello', 'World'>;  // 'HelloWorld'
+```
+
+
+
+递归
+
+```typescript
+// FlatUnion<[1, 2, 3]> -> 1 | 2 | 3
+// FlatUnion<1> -> 1
+type FlatUnion<T> = T extends unknown[]
+  ? T extends [infer head, ...infer tail]
+    ? head | FlatUnion<tail>
+    : never
+  : T;
+```
+
+
+
 #### 基础知识
 
 ###### 类型
