@@ -496,6 +496,52 @@ type T22 = '123' | '222' | null;
 type T23 = NonNullable<T22>; // '123' | '222';
 ```
 
+#### 推导
+
+```typescript
+import React from 'react'
+
+/**
+ * 可能为各个key的独立类型
+ */
+export type SingleProps<T> = {
+  [K in keyof T]: {
+    [K2 in K]: number
+  }
+}[keyof T]
+
+/**
+ * 根据type动态添加id
+ */
+export type AddId<T extends { type: string }> = {
+  [K in T['type']]: {
+    type: K
+  } & Record<`${K}Id`, string>
+}[T['type']]
+
+/**
+ * 获取React组件参数的类型
+ */
+export type PropsOfComponent<P> = P extends React.FC<infer Props>
+  ? Props
+  : P extends React.Component<infer Props>
+  ? Props
+  : never
+
+/**
+ * 添加指定字符串类型的提示
+ */
+
+export type LooseAutocomplete<T extends string> = T | Omit<string, T>
+
+/**
+ *
+ */
+
+```
+
+
+
 #### 操作技巧
 
 ###### 类型体操实现字段禁用

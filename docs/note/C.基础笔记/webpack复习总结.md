@@ -18,7 +18,7 @@
 * chunk：多模块的合成，例如在entry，import()，`splitChunk`中都可能产生chunk
 * `bandle`：最终输出文件，通常每个`bandle`都对应着一个chunk
 
-
+社区文章 https://xie.infoq.cn/article/ddca4caa394241447fa0aa3c0
 
 ### 资源整合原理
 

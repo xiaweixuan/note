@@ -60,6 +60,81 @@ x >> 0 // Math.floor()
 
 ## 书写技巧
 
+#### 检查某对象是否有某属性
+
+in关键字可以原型链
+
+```javascript
+var myObject = {
+  name: '@tips_js'
+};
+
+myObject.hasOwnProperty('name'); // true
+'name' in myObject; // true
+
+
+myObject.hasOwnProperty('valueOf'); // false, valueOf 继承自原型链
+'valueOf' in myObject; // true
+```
+
+
+
+#### 字符串转数字
+
+```javascript
+console.log(+'123')
+// expected output: 123
+
+console.log(+'');
+// expected output: 0
+
+console.log(+true);
+// expected output: 1
+
+console.log(+false);
+// expected output: 0
+
+console.log(+'hello');
+// expected output: NaN
+```
+
+#### forEach 中无法break 或 continue
+
+使用some或every进行循环
+
+- 在一次循环中返回true则进行break
+- 在一次循环中返回false则进行continue
+
+```javascript
+[0, 1, 2, 3, 4].some(function(val, i) {
+  if (val === 2) {
+    return true;
+  }
+  console.log(val); // your code
+});
+//> 0, 1
+```
+
+#### 判等
+
+```javascript
+NaN === NaN // false
+Object.is(NaN, NaN) // true
+```
+
+#### 函数传入空参数
+
+```shell
+## queston
+> method('parameter1', , 'parameter3');
+Uncaught SyntaxError: Unexpected token ,
+## 常见方式
+> method('parameter1', null, 'parameter3') // or
+> method('parameter1', undefined, 'parameter3');
+## es6
+> method(...['parameter1', , 'parameter3']);
+```
+
 
 #### Infinity
 表示最大的数
@@ -174,4 +249,6 @@ const flush = () => {
 
 flush()
 ```
+
+
 
