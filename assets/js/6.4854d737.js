@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[6],{428:function(t,n,e){"use strict";e.r(n);var o={name:"JumpToNote",mounted:function(){this.$router.push({path:"/note/"})}},u=e(65),s=Object(u.a)(o,(function(){var t=this.$createElement;return(this._self._c||t)("p",[this._v("loading")])}),[],!1,null,null,null);n.default=s.exports}}]);
