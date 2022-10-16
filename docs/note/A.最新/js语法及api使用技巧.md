@@ -60,6 +60,14 @@ x >> 0 // Math.floor()
 
 ## 书写技巧
 
+#### 过滤NaN
+
+```javascript
+if (x !== x) { /* do some thing */ }
+```
+
+
+
 #### 检查某对象是否有某属性
 
 in关键字可以原型链

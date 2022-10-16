@@ -1,6 +1,449 @@
- go mod init app-name
-
+```shell
+go mod init app-name
 go run index.go
+go get example.com/pkg ## 下载依赖
+go mod tidy ## 检测该文件夹目录下所有引入的依赖,写入 go.mod 文件
+go mod download ## 下载mod中的依赖
+go env ## 环境变量
+## GOROOT go的安装目录
+## GOPATH go的工作目录
+## GOPROSY go modules的代理地址，默认https://goproxy.io
+## GOPRIVATE 引用内网包是，可以设置成内网代码仓库域名，只是go modules不去代理上下载
+
+```
+
+
+
+概念
+
+- orm框架：对象-关系映射（Object-Relational Mapping，简称ORM）。ORM框架就是连接数据库的桥梁，是一个数据持久层框架。常见的ORM框架有MyBatis, Hibernate
+- RPC 场景：Remote Procedure Call ，即远程过程调用。能使应用像调用本地方法一样的调用远程的过程或服务,可以应用在分布式服务、分布式计算、远程服务调用等许多*场景*。
+
+
+
+
+
+
+
+
+
+
+
+
+
+### slice
+
+#### slice与array的区别
+
+```go
+// slice
+var s []int
+s := make([]int, len, cap)
+
+// array
+var a [length]int
+
+// slice底层结构
+type slice struct {
+  array unsafe.Pointer
+  len  	int
+  cap 	int
+}
+```
+
+注意点：
+
+- array需要指明长度，且为常量不可变
+- array长度为其类型中组成部分
+- array作为函数参数的时候会产生copy
+- go所有函数参数都是值传递
+
+#### len cap的变化
+
+```go
+// len cap
+var s []int 		 									// 0,0
+s = append(s, 0) 									// 1,1
+s = append(s, 1)									// 2,2
+s = append(s, 2)									// 3,4
+for i := 3; i < 1025; i++ {				// 1025, 1280
+  s = append(s, i)
+} 																
+
+// 当cap<1024时候，每次*2
+// 当cap>=1024时候，每次*1.25
+```
+
+
+
+#### slice技巧
+
+```go
+/* 
+	循环赋值：
+	预先分配内存可以提升性能
+	直接使用index赋值而不是append可以提升性能
+*/
+var s []int
+for j:=0; j<10000; j++{
+  s=append(s, j)
+}
+// 性能较好
+s := make([]int, 0, 10000)
+for j:=0; j<10000; j++{
+  s=append(s, j)
+}
+
+// 性能最好的
+s := make([]int, 10000)
+for j:=0; j<10000; j++{
+  s[j]=j
+}
+```
+
+#### 作为参数传递的注意点
+
+```go
+// case1：虽然函数的参数是值传递，但是s中的值是一个指针
+func modifySlice(s []int) {
+  s[0]=1024
+}
+func main() {
+  var s []int
+  for i:=0; i<3; i++ {
+    s=append(s, i)
+  }
+  modifySlice(s)
+  fmt.Println(s) // [1024 1 2]
+}
+
+// case2：外面的s与函数内的s不是同一个struct。传进函数的是一个struct，且按值传递，所以里面对s进行append是无法改变外面s的len
+func modifySlice(s []int) {
+  s=append(s, 2048)
+  s[0]=1024
+}
+func main() {
+  var s []int
+  for i:=0; i<3; i++ {
+    s=append(s, i)
+  }
+  modifySlice(s)
+  fmt.Println(s) // [1024 1 2]
+}
+
+// case3：当添加4096时，重新分配了内存，这样函数中的s整体指向了其他的内存，再修改s外面的变量已不受影响了
+func modifySlice(s []int) {
+  s=append(s, 2048)
+  s=append(s, 4096)
+  s[0]=1024
+}
+func main() {
+  var s []int
+  for i:=0; i<3; i++ {
+    s=append(s, i)
+  }
+  modifySlice(s)
+  fmt.Println(s) // [0 1 2]
+}
+
+// case4
+func modifySlice(s []int) {
+  s=append(s, 2048)
+  s=append(s, 4096)
+  s[0]=1024
+}
+func main() {
+  var s []int
+  for i:=0; i<3; i++ {
+    s=append(s, i)
+  }
+  modifySlice(s)
+  fmt.Println(s) // [1024 1 2]
+}
+```
+
+
+
+#### 变量声明差异
+
+使用`[]Type{}`或者`make([]Type)`初始化后，slice不为nil
+
+使用`var x []Type`后，slice为nil
+
+```go
+// case1
+func main() {
+  var s []int
+  b, _ := json.Marshal(s)
+  fmt.Println(string(b)) // null
+}
+
+// case2
+func main() {
+  s := []int{}
+  b, _ := json.Marshal(s)
+  fmt.Println(string(b)) // []
+}
+```
+
+#### 优化技巧
+
+```go
+func normal(s []int){
+  i:=0
+  i+=s[0]
+  i+=s[1]
+  i+=s[2]
+  i+=s[3]
+  i+=s[4]
+  println(i)
+}
+
+===> 编译器实现优化 bce
+
+func bce(s []int){
+  _ = s[3]
+  i:=0
+  i+=s[0]
+  i+=s[1]
+  i+=s[2]
+  i+=s[3]
+  i+=s[4]
+  println(i)
+}
+```
+
+
+
+### map
+
+```go
+// map实际上的值是指针，传的参数是指针。修改会影响整个map
+// map的key value都不可取地址，因为它们随着map扩容地址会改变
+// map存的是值，会发生copy
+// map赋值的时候会自动扩容，但随着删除不会缩容
+```
+
+
+
+### channel
+
+```go
+make(chan Type)
+make(chan Type, len)
+
+func main(){
+  ch:=make(chan int)
+  go func() {
+    ch <- 1
+    close(ch)
+  }
+  for {
+    select {
+      case i:= <-ch:
+      	fmt.Println(i)
+      default: 
+      	break
+    }
+  }
+}
+// 死循环 一直输出0
+// for + select closed channel 会造成死循环
+// select 重break无法跳出for循环
+```
+
+
+
+### 可读性
+
+```go
+func aFunc() error {
+  if err:=doSomething(); err != nil {
+    return err
+  }
+  if err:=doAnotherthing(); err != nil {
+    return err
+  }
+  return nil // happy path
+}
+
+
+var a int
+if flag{
+  a=1
+}else{
+  a=-1
+}
+===>
+a:=-1
+if flag{
+  a=1
+}
+```
+
+
+
+
+
+
+
+### 最佳实践 
+
+```go
+// 缩小锁持有时间，缩小临界区
+var Users = map[string]string {
+  "user": "password"
+}
+var mu sync.Mutex
+
+func CheckUser(name, password string) bool {
+  mu.Lock()
+  defer mu.Unlock()
+  realPwd, exist := Users[name]
+  return exist && realPwd == password
+}
+===>
+func CheckUser(name, password string) bool {
+  var realPwd string
+  var exist bool
+  func(){
+    mu.Lock()
+  	defer mu.Unlock()
+  	realPwd, exist := Users[name]
+  }()
+  return exist && realPwd == password
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+变量定义
+
+var 或者直接 :=
+
+
+
+数组是有长度的
+
+```go
+// 定义
+var a [3]int                    // 定义长度为3的int型数组, 元素全部为0
+var b = [...]int{1, 2, 3}       // 定义长度为3的int型数组, 元素为 1, 2, 3
+var c = [...]int{2: 3, 1: 2}    // 定义长度为3的int型数组, 元素为 0, 2, 3
+var d = [...]int{1, 2, 4: 5, 6} // 定义长度为6的int型数组, 元素为 1, 2, 0, 0, 5, 6
+
+
+
+// 遍历
+for i, v := range e {  // e可以是数组，也可以是指针（var e = &b
+    fmt.Printf("b[%d]: %d\n", i, v)
+}
+for range e {
+    fmt.Println("hello")
+}
+for i := 0; i < len(e); i++ {
+    fmt.Printf("c[%d]: %d\n", i, e[i])
+}
+```
+
+
+
+字符串支持切片操作。
+
+切片是简化版的动态数组
+
+>  len返回切片有效长度，cap返回切片容量。
+>
+> `append`的操作会导致重新分配内存
+>
+> copy(target, origin)
+
+```go
+var (
+    a []int               // nil切片, 和 nil 相等, 一般用来表示一个不存在的切片
+    b = []int{}           // 空切片, 和 nil 不相等, 一般用来表示一个空的集合
+    c = []int{1, 2, 3}    // 有3个元素的切片, len和cap都为3
+    d = c[:2]             // 有2个元素的切片, len为2, cap为3
+    e = c[0:2:cap(c)]     // 有2个元素的切片, len为2, cap为3
+    f = c[:0]             // 有0个元素的切片, len为0, cap为3
+    g = make([]int, 3)    // 有3个元素的切片, len和cap都为3
+    h = make([]int, 2, 3) // 有2个元素的切片, len为2, cap为3
+    i = make([]int, 0, 3) // 有0个元素的切片, len为0, cap为3
+)
+
+// 切片操作
+
+// 结尾追加
+var a []int
+a = append(a, 1)               // 追加1个元素
+a = append(a, 1, 2, 3)         // 追加多个元素, 手写解包方式
+a = append(a, []int{1,2,3}...) // 追加一个切片, 切片需要解包
+
+// 开头追加
+var a = []int{1,2,3}
+a = append([]int{0}, a...)        // 在开头添加1个元素
+a = append([]int{-3,-2,-1}, a...) // 在开头添加1个切片
+
+// 中间位置插入元素
+a = append(a, x...)       // 为x切片扩展足够的空间
+copy(a[i+len(x):], a[i:]) // a[i:]向后移动len(x)个位置
+copy(a[i:], x)            // 复制新添加的切片
+
+// 删除切片
+a = []int{1, 2, 3}
+a = a[:len(a)-1]   // 删除尾部1个元素
+a = a[:len(a)-N]   // 删除尾部N个元素
+a = a[1:] // 删除开头1个元素
+a = a[N:] // 删除开头N个元素
+a = append(a[:0], a[1:]...) // 删除开头1个元素
+a = append(a[:0], a[N:]...) // 删除开头N个元素
+a = a[:copy(a, a[1:])] // 删除开头1个元素
+a = a[:copy(a, a[N:])] // 删除开头N个元素
+a = append(a[:i], a[i+1:]...) // 删除中间1个元素
+a = append(a[:i], a[i+N:]...) // 删除中间N个元素
+a = a[:i+copy(a[i:], a[i+1:])]  // 删除中间1个元素
+a = a[:i+copy(a[i:], a[i+N:])]  // 删除中间N个元素
+
+```
+
+> `e = c[0:2:cap(c)]`中，实际上是指定切片的三个属性，
+>
+> ```go
+> type SliceHeader struct {
+>     Data uintptr
+>     Len  int
+>     Cap  int
+> }
+> ```
+>
+> 通过移动三个指针的值，而改变切片。所以这样改不会像append一样创建新的切片。
 
 
 
@@ -166,6 +609,41 @@ fmt.Println(a, b)
 
 ## 数据结构的定义
 
+
+
+make 用来为 [slice](https://so.csdn.net/so/search?q=slice&spm=1001.2101.3001.7020)，map 或 chan 类型分配内存和初始化一个对象，跟 new 类似，第一个参数是一个类型而不是一个值，跟 new 不同的是，make 返回类型的结构实列而不是指针，而返回值也依赖于具体传入的类型
+
+```go
+var slice_ []int = make([]int,5,10)
+fmt.Println(slice_)
+ 
+var m_ map[string]int = make(map[string]int)
+m_["one"] = 1
+fmt.Println(m_)
+ 
+c := make(chan int)
+go func() {
+  for {
+    n := <-c
+		fmt.Println(n)
+  }
+}
+c <- 1
+c <- 2
+time.Sleep(time.Millisecond)
+// 打印结果：
+// [0 0 0 0 0]
+// map[one:1]
+// 1
+// 2
+```
+
+
+
+
+
+
+
 #### 数组
 
 当数组被当参数传入函数中的时候，仍然是拷贝一个同样的值去进行操作
@@ -256,6 +734,48 @@ delete(m, "name")
 ## 面向【还没有的】对象
 
 go语言只支持封装，不支持继承和多态。他并没有面向对象的很多特征，但是使用它独有的特征可以模拟使用面向对象的思想
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #### 结构体
 
@@ -360,6 +880,57 @@ func (myNode *myTreeNode) getValue() {
 
 ## 面向接口
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```go
+resp, err := http.Get(rul)
+result, err := httputil.DumpResponse(res, true)
+resp.Body.Close()
+string(result)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #### 接口的目的
 
 定义一个结构的类型，我们可以只定义所需要的属性或者方法，然后用它进行类型说明，从而降低代码耦合
@@ -410,31 +981,39 @@ func main(){
 }
 ```
 
-上面的例子中，我们用Retriever声明了r变量(接口变量)，然后通过将创建的结构体实力赋值给他，那他的值到底是什么呢？分为两部分，一部分是实现者的类型，另一部分则是实现者的值（实现者的指针）。可以通过下面代码验证
+我们用Retriever声明了r变量(接口变量)，变量`r`是`Retriever`类型的接口变量，他其实有两部分组成，一部分是实现者的类型，另一部分则是实现者的值（实现者的指针）。
+
+可以通过下面代码验证
 
 ```go
+// Type assertion
+if mockRetriever, ok := r.(mock.Retriever); ok {
+  fmt.Println(mockRetriever.Contents)
+}
+
+// switch
 switch v := r.(type) {
 	case mock.Retriever:
-		fmt.Println(v.Contentss)
+		fmt.Println(v.Contents)
 }
 mockRetriever := r.(mock.Retriever)
 fmt.Println(mockRetriever.Contents)
 ```
 
-使用`interface{}`表示任何类型
+> 使用`interface{}`表示任何类型
+
+
 
 #### 接口的组合
 
 例如我同时需要用到两个接口
 
 ```go
-func download(r Retriever) string{
-  return r.Get("lala")
+type Poster interface {
+  Post() string
 }
-func post(p Poster) {
-  p.Post("lala", map[string]string {
-    "name": "xwx",
-  })
+type Retriever interface {
+  Get() string
 }
 type RetrieverPoster interface {
   Retriever
@@ -445,6 +1024,8 @@ func session(s RetrieverPoster) {
   s.Post()
 }
 ```
+
+
 
 #### 常用系统接口
 
@@ -492,6 +1073,8 @@ type Writer interface {
 ```
 
 Fprintf方法的第一个参数是一个Writer
+
+
 
 ## 函数式编程
 
@@ -558,10 +1141,21 @@ func writeFile(filename string){
   }
   defer file.Close()
   
-  // 。。。写入操作
+  writer := bufio.NewWriter(file)
+  defer writer.Flush()
+
+  for i:= 0; i< 20; i++ {
+    fmt.Fprintln(writer, i)
+  }
+}
+                 
+func main() {
+  writeFile('a.txt')
 }
 
  ```
+
+
 
 #### 错误处理
 
@@ -569,57 +1163,37 @@ func writeFile(filename string){
 
 ```go
 // 常见操作
-file, err := osOpenFile(...)
-if err != nil {
-  if pathError, ok := err.(*os.pathError);!ok {
-    panic(err)
-  }else{
-    fmt.Printf("%s, %s, %s\n",
-      pathError.Op,
-      pathError.Path,
-      pathError,Err
-    )
-    return
-  }
+func writeFile(filename string) {
+	file, err := os.OpenFile(filename, os.O_EXCL|os.O_CREATE, 0666)
+
+	if err != nil {
+		if pathError, ok := err.(*os.PathError); !ok {
+			panic(err)
+		} else {
+			fmt.Printf("%s, %s, %s\n",
+				pathError.Op,
+				pathError.Path,
+				pathError.Err,
+			)
+			return
+		}
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	defer writer.Flush()
+}
+
+func main() {
+	writeFile("a.txt")
 }
 ```
 
 那么如果更优雅的去处理错误呢？
 
-对于一个文件列表的服务，可能是下面逻辑
+对于一个文件列表的服务，可能是下面逻辑(创建errWrapper包裹函数去处理error)
 
 ```go
-// filelisting.go
-package filelisting
-func HandleFileList(writer http.ResponseWriter, request *http.Request){
-    path := request.URL.Path[len("/list/"):]
-    file, err := os.Open(path)
-    if err != nil {
-      panic(err)
-    }
-    defer file.Close()
-    
-    all, err := ioutil.ReadAll(file)
-    if err != nil {
-      panic(err)
-    }
-    writer.Write(all)
-}
-// 主程序
-func main() {
-  http.HandleFunc("/list/", filelisting.HandleFileList)
-  err := http.ListenAndServe(":8888", nil)
-  if err != nil {
-    panic(err)
-  }
-}
-```
-
-为了将逻辑抽离，降低耦合度，我们将他们进行改造。我们的想法是给动作函数再包裹一层专门去处理错误的函数，所以在HandleFileList中，我们直接去返回err
-
-```go
-// filelisting.go
-package filelisting
 func HandleFileList(writer http.ResponseWriter, request *http.Request){
     path := request.URL.Path[len("/list/"):]
     file, err := os.Open(path)
@@ -635,37 +1209,9 @@ func HandleFileList(writer http.ResponseWriter, request *http.Request){
     writer.Write(all)
   return nil
 }
-```
-
-然后在主程序中去接受err并进行操作
-
-```go
-// 主程序
 
 type appHandler func(writer http.ResponseWriter, request *http.Request) error
 
-func errWrapper(handler appHandler) func(http.ResponseWriter, *http.Request) {
-  return func(writer http.ResponseWriter, request *http.Request) {
-    err := handler(writer, request)
-    if err != nil {
-      panic(err)
-    }
-  }
-}
-func main() {
-  http.HandleFunc(
-    "/list/", 
-    errWrapper(filelisting.HandleFileList))
-  err := http.ListenAndServe(":8888", nil)
-  if err != nil {
-    panic(err)
-  }
-}
-```
-
-当我们请求`localhost:8888/list/a.txt`我们可以看到该文件内容，但是如果我们访问了一个不存在的文件，程序就会由于我们的panic抛出一个错误。所以，我们需要更友好的去处理错误，就需要再改造errWrapper函数
-
-```go
 func errWrapper(handler appHandler) func(http.ResponseWriter, *http.Request) {
   return func(writer http.ResponseWriter, request *http.Request) {
     err := handler(writer, request)
@@ -688,7 +1234,19 @@ func errWrapper(handler appHandler) func(http.ResponseWriter, *http.Request) {
     }
   }
 }
+
+func main() {
+  http.HandleFunc(
+    "/list/", 
+    errWrapper(HandleFileList))
+  err := http.ListenAndServe(":8888", nil)
+  if err != nil {
+    panic(err)
+  }
+}
 ```
+
+
 
 #### panic与recover
 
@@ -733,13 +1291,364 @@ func tryRecover(){
 
 
 
-
-
-
-
-
-
 ## 并发编程
+
+协程
+
+- 非强占式多任务处理，由协程主动交出控制权
+- 编译器/解释器/虚拟机层面的多任务
+- 多个协程可能在多个或者一个线程上进行
+
+```go
+func main() {
+	for i:=0; i<1000;i++{
+		go func(i) {
+      for {
+        fmt.Printf(i)
+      }
+		}(i)
+	}
+  time.Sleep(time.Milliscond)
+}
+// 此处fmt的io操作会主动交出控制权，我们也可以手动交出
+func main() {
+  var a [10]int
+	for i:=0; i<1000;i++{
+		go func(i) {
+      for {
+        a[i]++
+        runtime.Gosched()
+      }
+		}(i)
+	}
+  time.Sleep(time.Milliscond)
+}
+```
+
+channel用法
+
+```go
+func worker(id int, c chan int) {
+	for n := range c {
+		fmt.Printf("Worker %d received %c\n",
+			id, n)
+	}
+}
+// 写法等同于下
+// func worker(id int, c chan int) {
+// 	for {
+// 		n, ok := <-c
+// 		if !ok {
+// 			break
+// 		}
+// 		fmt.Printf("Worker %d received %c\n",
+// 			id, n)
+// 	}
+// }
+
+
+func createWorker(id int) chan<- int { // chan<-表示返回的值只能用于传数据
+	c := make(chan int)
+	go worker(id, c)
+	return c
+}
+
+func chanDemo() {
+	var channels [10]chan<- int
+	for i := 0; i < 10; i++ {
+		channels[i] = createWorker(i)
+	}
+
+	for i := 0; i < 10; i++ {
+		channels[i] <- 'a' + i
+	}
+
+	for i := 0; i < 10; i++ {
+		channels[i] <- 'A' + i
+	}
+
+	time.Sleep(time.Millisecond)
+}
+
+func bufferedChannel() {
+	c := make(chan int, 3) // 3个单位的缓存区，传入3个以内数据时，即使没有接收者，也不会报错
+	go worker(0, c)
+	c <- 'a'
+	c <- 'b'
+	c <- 'c'
+	c <- 'd'
+	time.Sleep(time.Millisecond)
+}
+
+func channelClose() {
+	c := make(chan int)
+	go worker(0, c)
+	c <- 'a'
+	c <- 'b'
+	c <- 'c'
+	c <- 'd'
+	close(c)
+	time.Sleep(time.Millisecond)
+}
+
+func main() {
+	fmt.Println("Channel as first-class citizen")
+	chanDemo()
+	fmt.Println("Buffered channel")
+	bufferedChannel()
+	fmt.Println("Channel close and range")
+	channelClose()
+}
+
+```
+
+任务等待（使用channel等待goroutine结束，不再使用time.Sleep去等待
+
+```go
+func doWork(id int,
+	w worker) {
+	for n := range w.in {
+		fmt.Printf("Worker %d received %c\n",
+			id, n)
+		w.done()
+	}
+}
+
+type worker struct {
+	in   chan int
+	done func()
+}
+
+func createWorker(
+	id int, wg *sync.WaitGroup) worker {
+	w := worker{
+		in: make(chan int),
+		done: func() {
+			wg.Done() // 完成任务
+		},
+	}
+	go doWork(id, w)
+	return w
+}
+
+func chanDemo() {
+	var wg sync.WaitGroup
+
+	var workers [10]worker
+	for i := 0; i < 10; i++ {
+		workers[i] = createWorker(i, &wg)
+	}
+
+	wg.Add(20) // 添加任务数
+	for i, worker := range workers {
+		worker.in <- 'a' + i
+	}
+	for i, worker := range workers {
+		worker.in <- 'A' + i
+	}
+
+	wg.Wait() // 等待任务全部做完
+}
+
+func main() {
+	chanDemo()
+}
+```
+
+使用select进行调度（从c1和c2同时接收数据，只收取最返回的
+
+```go
+
+func generator() chan int {
+	out := make(chan int)
+	go func() {
+		i := 0
+		for {
+			time.Sleep(
+				time.Duration(rand.Intn(1500)) *
+					time.Millisecond)
+			out <- i
+			i++
+		}
+	}()
+	return out
+}
+
+func worker(id int, c chan int) {
+	for n := range c {
+		time.Sleep(time.Second)
+		fmt.Printf("Worker %d received %d\n",
+			id, n)
+	}
+}
+
+func createWorker(id int) chan<- int {
+	c := make(chan int)
+	go worker(id, c)
+	return c
+}
+
+func main() {
+	var c1, c2 = generator(), generator()
+	var worker = createWorker(0)
+
+	var values []int
+	tm := time.After(10 * time.Second) // 10s后向返回的channel传入一个值
+	tick := time.Tick(time.Second)     // 定时，每隔指定时间向返回的channel传入一个值
+	for {
+		var activeWorker chan<- int
+		var activeValue int
+		if len(values) > 0 {
+			activeWorker = worker
+			activeValue = values[0]
+		}
+
+		select {
+		case n := <-c1:
+			values = append(values, n)
+		case n := <-c2:
+			values = append(values, n)
+		case activeWorker <- activeValue:
+			values = values[1:]
+
+		case <-time.After(800 * time.Millisecond):
+			fmt.Println("timeout")
+		case <-tick:
+			fmt.Println(
+				"queue len =", len(values))
+		case <-tm:
+			fmt.Println("bye")
+			return
+		}
+	}
+}
+```
+
+传统同步机制（锁 mutex，建议使用channel进行场景处理
+
+```go
+type atomicInt struct {
+	value int
+	lock  sync.Mutex
+}
+
+func (a *atomicInt) increment() {
+	fmt.Println("safe increment")
+	func() {
+		a.lock.Lock()
+		defer a.lock.Unlock()
+
+		a.value++
+	}()
+}
+
+func (a *atomicInt) get() int {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	return a.value
+}
+
+func main() {
+	var a atomicInt
+	a.increment()
+	go func() {
+		a.increment()
+	}()
+	time.Sleep(time.Millisecond)
+	fmt.Println(a.get())
+}
+
+```
+
+并发模式，同时接收多个channel传的数据
+
+```go
+func msgGen(name string) chan string {
+	c := make(chan string)
+	go func() {
+		i := 0
+		for {
+			time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
+			c <- fmt.Sprintf("service %s: message %d", name, i)
+			i++
+		}
+	}()
+	return c
+}
+
+func fanIn(chs ...chan string) chan string {
+	c := make(chan string)
+	for _, ch := range chs {
+		go func(in chan string) {
+			for {
+				c <- <-in
+			}
+		}(ch)
+	}
+	return c
+}
+
+func fanInBySelect(c1, c2 chan string) chan string {
+	c := make(chan string)
+	go func() {
+		for {
+			select {
+			case m := <-c1:
+				c <- m
+			case m := <-c2:
+				c <- m
+			}
+		}
+	}()
+	return c
+}
+
+func main() {
+	m1 := msgGen("service1")
+	m2 := msgGen("service2")
+	m3 := msgGen("service3")
+	m := fanIn(m1, m2, m3)
+	for {
+		fmt.Println(<-m)
+	}
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -770,6 +1679,61 @@ func tryRecover(){
 #### 测试
 
 go语言使用的是表格驱动测试
+
+## web开发
+
+
+
+
+
+
+
+```go
+//brief_intro/echo.go
+package main
+import (...)
+
+func echo(wr http.ResponseWriter, r *http.Request) {
+    msg, err := ioutil.ReadAll(r.Body)
+    if err != nil {
+        wr.Write([]byte("echo error"))
+        return
+    }
+
+    writeLen, err := wr.Write(msg)
+    if err != nil || writeLen != len(msg) {
+        log.Println(err, "write len:", writeLen)
+    }
+}
+
+func main() {
+    http.HandleFunc("/", echo)
+    err := http.ListenAndServe(":8080", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
